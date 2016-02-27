@@ -33,4 +33,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.provision 'shell', path: './scripts/vmware_tools.sh'
   config.vm.provision :reload
   config.vm.provision 'shell', path: './scripts/provision.sh'
+  
+  config.push.define "atlas" do |push|
+    push.app = "jason-chang/php-centos-box"
+  end
+  
 end
