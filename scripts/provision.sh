@@ -1,120 +1,77 @@
 #!/usr/bin/env bash
+#配置ssh
+sed -i '/UseDNS/cUseDNS no' /etc/ssh/sshd_config
 
-export DEBIAN_FRONTEND=noninteractive
+# 修改本地位置
+echo "LC_ALL=zh_CN.UTF-8" > /etc/locale.conf
+echo "LANG=zh_CN.UTF-8" >> /etc/locale.conf
+localedef -c -f UTF-8 -i zh_CN zh_CN.UTF-8
+export LC_ALL=zh_CN.UTF-8
 
-# Update Package List
+# 安装部分基础库
+yum groupinstall -y "Development Tools"
+yum install -y gcc gcc-c++
+yum install -y wget curl vim net-tools bash-completion whois
+yum install -y python python-devel python-pip supervisor
 
-apt-get update
+# 安装 epel repo
+yum install -y epel-release
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
 
-# Update System Packages
-apt-get -y upgrade
+# Remi repo
+rpm -i http://rpms.famillecollet.com/enterprise/remi-release-7.rpm
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-remi
+sed -i ':ena;s/enabled=1/enabled=0/;tena' /etc/yum.repos.d/remi.repo
+sed -i '/\[remi\-php56\]/,/\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/remi.repo
 
-# Force Locale
+# Mysql repo
+rpm -i http://repo.mysql.com//mysql57-community-release-el7-8.noarch.rpm
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-mysql
+sed -i ':ena;/\[mysql5.*\-community\]/,/\[/s/enabled=1/enabled=0/;tena' /etc/yum.repos.d/mysql-community.repo
+sed -i '/\[mysql57\-community\]/,/\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/mysql-community.repo
 
-echo "LC_ALL=en_US.UTF-8" >> /etc/default/locale
-locale-gen en_US.UTF-8
+# MariaDB repo /etc/yum.repos.d/
+cat > /etc/yum.repos.d/mariadb.repo << EOF
+[mariadb-55]
+name = MariaDB
+baseurl = http://yum.mariadb.org/5.5/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+enabled=0
+gpgcheck=1
 
-# Install Some PPAs
+[mariadb-10]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.0/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+enabled=0
+gpgcheck=1
 
-apt-get install -y software-properties-common curl
-
-apt-add-repository ppa:nginx/development -y
-apt-add-repository ppa:chris-lea/redis-server -y
-apt-add-repository ppa:ondrej/php -y
-
-# gpg: key 5072E1F5: public key "MySQL Release Engineering <mysql-build@oss.oracle.com>" imported
-apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys 5072E1F5
-sh -c 'echo "deb http://repo.mysql.com/apt/ubuntu/ trusty mysql-5.7" >> /etc/apt/sources.list.d/mysql.list'
-
-wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" >> /etc/apt/sources.list.d/postgresql.list'
-
-curl -s https://packagecloud.io/gpg.key | apt-key add -
-echo "deb http://packages.blackfire.io/debian any main" | tee /etc/apt/sources.list.d/blackfire.list
-
-curl --silent --location https://deb.nodesource.com/setup_5.x | bash -
-
-# Update Package Lists
-
-apt-get update
-
-# Install Some Basic Packages
-
-apt-get install -y build-essential dos2unix gcc git libmcrypt4 libpcre3-dev \
-make python2.7-dev python-pip re2c supervisor unattended-upgrades whois vim libnotify-bin
-
-# Set My Timezone
-
-ln -sf /usr/share/zoneinfo/UTC /etc/localtime
-
-# Install PHP Stuffs
-
-apt-get install -y --force-yes php7.0-cli php7.0-dev \
-php-pgsql php-sqlite3 php-gd php-apcu \
-php-curl php7.0-mcrypt \
-php-imap php-mysql php-memcached php7.0-readline php-xdebug \
-php-mbstring php-xml
-
-# Install Composer
-
-curl -sS https://getcomposer.org/installer | php
-mv composer.phar /usr/local/bin/composer
-
-# Add Composer Global Bin To Path
-
-printf "\nPATH=\"/home/vagrant/.composer/vendor/bin:\$PATH\"\n" | tee -a /home/vagrant/.profile
-
-# Install Laravel Envoy & Installer
-
-sudo su vagrant <<'EOF'
-/usr/local/bin/composer global require "laravel/envoy=~1.0"
-/usr/local/bin/composer global require "laravel/installer=~1.1"
+[mariadb-101]
+name = MariaDB
+baseurl = http://yum.mariadb.org/10.1/centos7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+enabled=0
+gpgcheck=1
 EOF
+rpm --import https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+sed -i ':ena;s/enabled=1/enabled=0/;tena' /etc/yum.repos.d/mariadb.repo
+#sed -i '/\[mariadb\-101\]/,/\[/s/enabled=0/enabled=1/' /etc/yum.repos.d/mariadb.repo
 
-# Set Some PHP CLI Settings
+# PostgreSQL 9.5 repo
+rpm -i https://download.postgresql.org/pub/repos/yum/9.5/redhat/rhel-7-x86_64/pgdg-centos95-9.5-2.noarch.rpm
+rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-95
 
-sudo sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/7.0/cli/php.ini
-sudo sed -i "s/display_errors = .*/display_errors = On/" /etc/php/7.0/cli/php.ini
-sudo sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/7.0/cli/php.ini
-sudo sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/7.0/cli/php.ini
+# Nodejs 6 repo
+curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
+rpm --import /etc/pki/rpm-gpg/NODESOURCE-GPG-SIGNING-KEY-EL
 
-# Install Nginx & PHP-FPM
+# 设置 时区
+ln -sf /usr/share/zoneinfo/Hongkong /etc/localtime
 
-apt-get install -y --force-yes nginx php7.0-fpm
+# 安装 Nginx
+yum install -y nginx
 
-rm /etc/nginx/sites-enabled/default
-rm /etc/nginx/sites-available/default
-service nginx restart
-
-# Add The HHVM Key & Repository
-
-wget -O - http://dl.hhvm.com/conf/hhvm.gpg.key | apt-key add -
-echo deb http://dl.hhvm.com/ubuntu trusty main | tee /etc/apt/sources.list.d/hhvm.list
-apt-get update
-apt-get install -y hhvm
-
-# Configure HHVM To Run As Homestead
-
-service hhvm stop
-sed -i 's/#RUN_AS_USER="www-data"/RUN_AS_USER="vagrant"/' /etc/default/hhvm
-service hhvm start
-
-# Start HHVM On System Start
-
-update-rc.d hhvm defaults
-
-# Setup Some PHP-FPM Options
-
-sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php/7.0/fpm/php.ini
-sed -i "s/display_errors = .*/display_errors = On/" /etc/php/7.0/fpm/php.ini
-sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php/7.0/fpm/php.ini
-sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php/7.0/fpm/php.ini
-sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php/7.0/fpm/php.ini
-sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php/7.0/fpm/php.ini
-sed -i "s/;date.timezone.*/date.timezone = UTC/" /etc/php/7.0/fpm/php.ini
-
-# Copy fastcgi_params to Nginx because they broke it on the PPA
-
+# 设置 Nginx
 cat > /etc/nginx/fastcgi_params << EOF
 fastcgi_param	QUERY_STRING		\$query_string;
 fastcgi_param	REQUEST_METHOD		\$request_method;
@@ -137,100 +94,172 @@ fastcgi_param	HTTPS			\$https if_not_empty;
 fastcgi_param	REDIRECT_STATUS		200;
 EOF
 
-# Set The Nginx & PHP-FPM User
+sed -i "s/user nginx;/user vagrant;/" /etc/nginx/nginx.conf
+sed -i "/types_hash_max_size/a \    server_names_hash_bucket_size 64\;" /etc/nginx/nginx.conf
+sed -i ':begin;/server/,${$! {N; bbegin}};s/server {.*50x\.html {\s*}\s*}//' /etc/nginx/nginx.conf
+sed -i '/^http/,${/^}/s/}/    include \/etc\/nginx\/sites\/\*;\n}/}' /etc/nginx/nginx.conf
+chown vagrant.vagrant /var/log/nginx/
+mkdir /etc/nginx/sites
 
-sed -i "s/user www-data;/user vagrant;/" /etc/nginx/nginx.conf
-sed -i "s/# server_names_hash_bucket_size.*/server_names_hash_bucket_size 64;/" /etc/nginx/nginx.conf
+systemctl enable nginx.service
+systemctl start nginx.service
 
-sed -i "s/user = www-data/user = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
-sed -i "s/group = www-data/group = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
+# 安装 PHP
+yum install -y php php-devel php-fpm php-mysql php-pgsql php-imap php-ldap \
+php-pear php-xml php-mbstring php-mcrypt php-bcmath \
+php-mhash php-redis php-memcached php-xdebug php-curl \
+php-imagick php-gd php-openssl php-readline
+systemctl enable php-fpm.service
+systemctl start php-fpm.service
 
-sed -i "s/listen\.owner.*/listen.owner = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
-sed -i "s/listen\.group.*/listen.group = vagrant/" /etc/php/7.0/fpm/pool.d/www.conf
-sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php/7.0/fpm/pool.d/www.conf
+# 设置 php 配置
+sed -i "s/error_reporting = .*/error_reporting = E_ALL/" /etc/php.ini
+sed -i "s/display_errors = .*/display_errors = On/" /etc/php.ini
+sed -i "s/memory_limit = .*/memory_limit = 512M/" /etc/php.ini
+sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php.ini
+sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php.ini
+sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php.ini
+sed -i "s/;date.timezone.*/date.timezone = Asia\/Shanghai/" /etc/php.ini
 
-service nginx restart
-service php7.0-fpm restart
+# Xdebug设置
+sed -i '$ixdebug.remote_enable = ON' /etc/php.d/15-xdebug.ini
+sed -i '$ixdebug.remote_connect_back = ON' /etc/php.d/15-xdebug.ini
+sed -i '$ixdebug.remote_port = 9000' /etc/php.d/15-xdebug.ini
 
-# Add Vagrant User To WWW-Data
+# 设置 PHP-FPM 用户
+sed -i "s/user = apache/user = vagrant/" /etc/php-fpm.d/www.conf
+sed -i "s/group = apache/group = vagrant/" /etc/php-fpm.d/www.conf
 
-usermod -a -G www-data vagrant
-id vagrant
-groups vagrant
+sed -i "/^listen.*=/clisten = /dev/shm/php-cgi.sock" /etc/php-fpm.d/www.conf
+sed -i "s/;listen\.owner.*/listen.owner = nginx/" /etc/php-fpm.d/www.conf
+sed -i "s/;listen\.group.*/listen.group = nginx/" /etc/php-fpm.d/www.conf
+sed -i "s/;listen\.mode.*/listen.mode = 0666/" /etc/php-fpm.d/www.conf
 
-# Install Node
+mkdir -p /var/log/php
+chown vagrant.vagrant -R /var/log/php/
+chown vagrant.vagrant -R /var/log/php-fpm/
 
-apt-get install -y nodejs
+systemctl restart nginx.service
+systemctl restart php-fpm.service
+
+# 安装 Composer
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php -r "if (hash_file('SHA384', 'composer-setup.php') === '92102166af5abdb03f49ce52a40591073a7b859a86e8ff13338cf7db58a19f7844fbc0bb79b2773bf30791e935dbd938') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+php composer-setup.php
+php -r "unlink('composer-setup.php');"
+mv composer.phar /usr/local/bin/composer
+
+# 添加 Composer 程序目录到全局变量
+printf "\nPATH=\"/home/vagrant/.composer/vendor/bin:\$PATH\"\n" | tee -a /home/vagrant/.profile
+
+# 安装 Laravel Envoy & Installer
+sudo su vagrant <<'EOF'
+/usr/local/bin/composer global require "laravel/envoy=~1.0"
+/usr/local/bin/composer global require "laravel/installer=~1.1"
+EOF
+
+# 设置 目录权限
+chown vagrant.vagrant /var/lib/php/session
+chown vagrant.vagrant /var/lib/php/wsdlcache
+
+# 安装 Node
+yum install -y nodejs
 /usr/bin/npm install -g gulp
 /usr/bin/npm install -g bower
+/usr/bin/npm install -g webpack
 
-# Install SQLite
+# 安装 SQLite
+yum install -y sqlite sqlite-devel
 
-apt-get install -y sqlite3 libsqlite3-dev
+# 安装 MySQL
+yum install -y mysql mysql-client mysql-server mysql-devel
+systemctl enable mysqld.service
+systemctl start mysqld.service
 
-# Install MySQL
+# 配置 MySQL 密码生存时间
+sed -i '$a default_password_lifetime=0' /etc/my.cnf
 
-debconf-set-selections <<< "mysql-community-server mysql-community-server/data-dir select ''"
-debconf-set-selections <<< "mysql-community-server mysql-community-server/root-pass password secret"
-debconf-set-selections <<< "mysql-community-server mysql-community-server/re-root-pass password secret"
-apt-get install -y mysql-server
 
-# Configure MySQL Password Lifetime
+# 配置 MySQL 字符集
+sed -i '$a character_set_server=utf8' /etc/my.cnf
 
-echo "default_password_lifetime = 0" >> /etc/mysql/my.cnf
 
-# Configure MySQL Remote Access
+# 设置 MySQL 远程认证
+sed -i '$a bind-address = 0.0.0.0' /etc/my.cnf
 
-sed -i '/^bind-address/s/bind-address.*=.*/bind-address = 0.0.0.0/' /etc/mysql/my.cnf
+systemctl set-environment MYSQLD_OPTS="--skip-grant-tables"
+systemctl restart mysqld.service
 
-mysql --user="root" --password="secret" -e "GRANT ALL ON *.* TO root@'0.0.0.0' IDENTIFIED BY 'secret' WITH GRANT OPTION;"
-service mysql restart
+mysql --user="root" -e "UNINSTALL PLUGIN validate_password;"
+mysql --user="root" -e "UPDATE mysql.user SET authentication_string = PASSWORD('vagrant') WHERE User = 'root' AND Host = 'localhost';"
+mysql --user="root" -e "FLUSH PRIVILEGES;"
 
-mysql --user="root" --password="secret" -e "CREATE USER 'homestead'@'0.0.0.0' IDENTIFIED BY 'secret';"
-mysql --user="root" --password="secret" -e "GRANT ALL ON *.* TO 'homestead'@'0.0.0.0' IDENTIFIED BY 'secret' WITH GRANT OPTION;"
-mysql --user="root" --password="secret" -e "GRANT ALL ON *.* TO 'homestead'@'%' IDENTIFIED BY 'secret' WITH GRANT OPTION;"
-mysql --user="root" --password="secret" -e "FLUSH PRIVILEGES;"
-mysql --user="root" --password="secret" -e "CREATE DATABASE homestead;"
-service mysql restart
+systemctl set-environment MYSQLD_OPTS="--validate-password=OFF"
+systemctl restart mysqld.service
 
-# Add Timezone Support To MySQL
+mysql --user="root" --password="vagrant" --connect-expired-password -e "SET PASSWORD = PASSWORD('vagrant');"
 
-mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --user=root --password=secret mysql
+systemctl set-environment MYSQLD_OPTS=""
+systemctl restart mysqld.service
 
-# Install Postgres
+mysql --user="root" --password="vagrant" -e "UNINSTALL PLUGIN validate_password;"
+mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO root@'localhost' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
+mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO root@'0.0.0.0' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
+mysql --user="root" --password="vagrant" -e "FLUSH PRIVILEGES;"
 
-apt-get install -y postgresql-9.4 postgresql-contrib-9.4
+mysql --user="root" --password="vagrant" -e "CREATE USER 'vagrant'@'0.0.0.0' IDENTIFIED BY 'vagrant';"
+mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO 'vagrant'@'0.0.0.0' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
+mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO 'vagrant'@'%' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
+mysql --user="root" --password="vagrant" -e "FLUSH PRIVILEGES;"
+mysql --user="root" --password="vagrant" -e "drop DATABASE test;"
 
-# Configure Postgres Remote Access
+systemctl restart mysqld.service
 
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/9.4/main/postgresql.conf
-echo "host    all             all             10.0.2.2/32               md5" | tee -a /etc/postgresql/9.4/main/pg_hba.conf
-sudo -u postgres psql -c "CREATE ROLE homestead LOGIN UNENCRYPTED PASSWORD 'secret' SUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;"
-sudo -u postgres /usr/bin/createdb --echo --owner=homestead homestead
-service postgresql restart
+# 添加 MySQL 时区支持
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql --user="root" --password="vagrant" mysql
 
-# Install Blackfire
+# 安装 Postgres
+yum install -y postgresql95 postgresql95-server postgresql95-devel postgresql95-contrib
+/usr/pgsql-9.5/bin/postgresql95-setup initdb
+systemctl enable postgresql-9.5.service
+systemctl start postgresql-9.5.service
 
-apt-get install -y blackfire-agent blackfire-php
+# 配置 Postgres 远程访问
+sed -i "/#listen_addresses/alisten_addresses = '*'" /var/lib/pgsql/9.5/data/postgresql.conf
+echo "host    all             all             10.0.2.2/32               md5" | tee -a /var/lib/pgsql/9.5/data/pg_hba.conf
+sudo -u postgres psql -c "CREATE ROLE vagrant LOGIN UNENCRYPTED PASSWORD 'vagrant' SUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;"
+systemctl restart postgresql-9.5.service
 
-# Install A Few Other Things
+# 配置 Redis
+yum install -y redis
+systemctl enable redis.service
+systemctl start redis.service
 
-apt-get install -y redis-server memcached beanstalkd
+# 配置 memcached
+yum install -y memcached
+systemctl enable memcached.service
+systemctl start memcached.service
 
-# Configure Beanstalkd
+# 配置 Beanstalkd
+yum install -y beanstalkd
+systemctl enable beanstalkd.service
+systemctl start beanstalkd.service
 
-sed -i "s/#START=yes/START=yes/" /etc/default/beanstalkd
-/etc/init.d/beanstalkd start
+# Git
+yum install -y git
+echo 'source /usr/share/doc/git-*/contrib/completion/git-completion.bash' >> .profile
+
+# Clean
+yum clean all
 
 # Enable Swap Memory
-
 /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
 /sbin/mkswap /var/swap.1
 /sbin/swapon /var/swap.1
 
 # Minimize The Disk Image
-
 echo "Minimizing disk image..."
 dd if=/dev/zero of=/EMPTY bs=1M
 rm -f /EMPTY
 sync
+
