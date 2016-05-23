@@ -1,4 +1,2 @@
 /.vagrant
-/.idea
-*.box
-*.log
+build.sh
