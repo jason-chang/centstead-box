@@ -11,4 +11,4 @@ export VMwareVirtual
 
 # 没钱买 Vmware provider 的许可证
 #./builds/vmware.sh
-./builds/virtualbox.sh
+./builds/virtualbox.sh $1

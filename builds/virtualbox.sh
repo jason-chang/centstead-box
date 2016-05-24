@@ -1,32 +1,41 @@
 #!/usr/bin/env bash
 
 # install required vagrant plugin to handle reloads during provisioning
-vagrant plugin install vagrant-reload
+# vagrant plugin install vagrant-reload
 
-rm -rf ./box/virtualbox_*.box
-
-# 普通版
+vagrant halt
 vagrant destroy -f
 rm -rf .vagrant
 
-time vagrant up --provider virtualbox 2>&1 | tee ./logs/virtualbox-usual.log
-vagrant halt
-vagrant package --output ./boxs/virtualbox_usual.box
+if [ $1 == "usual" ]
+then
+    # 普通版
+    rm -rf ./logs/virtualbox_usual.log
+    rm -rf ./boxs/virtualbox_usual.box
 
-ls -lh ./boxs/virtualbox_usual.box
+    time vagrant up --provider virtualbox 2>&1 | tee ./logs/virtualbox_usual.log
+    vagrant halt
+    vagrant package --output ./boxs/virtualbox_usual.box
 
-# 先锋版
-vagrant destroy -f
-rm -rf .vagrant
-touch avant
+    ls -lh ./boxs/virtualbox_usual.box
 
-time vagrant up --provider virtualbox 2>&1 | tee ./logs/virtualbox-avant.log
-vagrant halt
-vagrant package --output ./boxs/virtualbox_avant.box
+fi
 
-ls -lh ./boxs/virtualbox_avant.box
+if [ $1 == "avant" ]
+then
+    # 先锋版
+    rm -rf ./logs/virtualbox_avant.log
+    rm -rf ./boxs/virtualbox_avant.box
+
+    touch avant
+    time vagrant up --provider virtualbox 2>&1 | tee ./logs/virtualbox_avant.log
+    rm -rf avant
+    vagrant halt
+    vagrant package --output ./boxs/virtualbox_avant.box
+
+    ls -lh ./boxs/virtualbox_avant.box
+fi
 
 # 清理
 vagrant destroy -f
 rm -rf .vagrant
-rm -rf avant

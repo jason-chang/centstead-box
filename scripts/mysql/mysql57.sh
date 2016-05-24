@@ -39,7 +39,7 @@ mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO root@'localhost
 mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO root@'0.0.0.0' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
 mysql --user="root" --password="vagrant" -e "FLUSH PRIVILEGES;"
 
-mysql --user="root" --password="vagrant" -e "CREATE USER 'vagrant'@'0.0.0.0' IDENTIFIED BY 'vagrant';"
+mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO 'vagrant'@'localhost' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
 mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO 'vagrant'@'0.0.0.0' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
 mysql --user="root" --password="vagrant" -e "GRANT ALL ON *.* TO 'vagrant'@'%' IDENTIFIED BY 'vagrant' WITH GRANT OPTION;"
 mysql --user="root" --password="vagrant" -e "FLUSH PRIVILEGES;"
