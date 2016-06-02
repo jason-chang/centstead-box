@@ -2,6 +2,8 @@
 
 # 安装 Supervisor
 yum install -y python python-devel python-pip supervisor
+systemctl enable supervisord.service
+systemctl start supervisord.service
 
 # 安装 Node
 yum install -y nodejs
@@ -32,10 +34,7 @@ yum install -y git
 echo 'source /usr/share/doc/git-*/contrib/completion/git-completion.bash' >> .profile
 
 # Fuck gfw 希望成功 安装 Composer
-php -r "copy('http://getcomposer.org/installer', 'composer-setup.php');"
-php -r "if (hash_file('SHA384', 'composer-setup.php') === '92102166af5abdb03f49ce52a40591073a7b859a86e8ff13338cf7db58a19f7844fbc0bb79b2773bf30791e935dbd938') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
-php composer-setup.php
-php -r "unlink('composer-setup.php');"
+curl -sS https://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 
 # 添加 Composer 程序目录到全局变量
