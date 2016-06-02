@@ -15,7 +15,6 @@ ln -sf /usr/share/zoneinfo/Hongkong /etc/localtime
 yum groupinstall -y "Development Tools"
 yum install -y gcc gcc-c++
 yum install -y wget curl vim net-tools bash-completion whois
-yum install -y python python-devel python-pip supervisor
 
 # 建立环境记录
 mkdir -p /home/vagrant/.env

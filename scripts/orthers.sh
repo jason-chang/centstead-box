@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# 安装 Supervisor
+yum install -y python python-devel python-pip supervisor
+
 # 安装 Node
 yum install -y nodejs
 /usr/bin/npm install -g gulp
