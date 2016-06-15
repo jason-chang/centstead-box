@@ -6,7 +6,7 @@ systemctl enable supervisord.service
 systemctl start supervisord.service
 
 # 安装 Node
-yum install -y nodejs
+yum install -y nodejs  --enablerepo=nodesource
 /usr/bin/npm install -g gulp
 /usr/bin/npm install -g bower
 /usr/bin/npm install -g webpack
@@ -31,11 +31,10 @@ systemctl start beanstalkd.service
 
 # Git
 yum install -y git
-echo 'source /usr/share/doc/git-*/contrib/completion/git-completion.bash' >> .profile
 
 # Fuck gfw 希望成功 安装 Composer
 curl -sS https://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 
 # 添加 Composer 程序目录到全局变量
-printf "\nPATH=\"/home/vagrant/.composer/vendor/bin:\$PATH\"\n" | tee -a /home/vagrant/.profile
+sed -i '/PATH=/{s/$/\:\$HOME\/\.config\/composer\/vendor\/bin/}' /home/vagrant/.bash_profile

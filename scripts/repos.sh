@@ -61,4 +61,5 @@ rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG-92
 
 # Nodejs 6 repo
 curl --silent --location http://rpm.nodesource.com/setup_6.x | bash -
+sed -i '/enabled=1/cenabled=0' /etc/yum.repos.d/nodesource-el.repo
 rpm --import /etc/pki/rpm-gpg/NODESOURCE-GPG-SIGNING-KEY-EL
