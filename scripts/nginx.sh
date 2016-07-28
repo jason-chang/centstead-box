@@ -30,8 +30,8 @@ sed -i "s/user nginx;/user vagrant;/" /etc/nginx/nginx.conf
 sed -i "/types_hash_max_size/a \    server_names_hash_bucket_size 64\;" /etc/nginx/nginx.conf
 sed -i ':begin;/server/,${$! {N; bbegin}};s/server {.*50x\.html {\s*}\s*}//' /etc/nginx/nginx.conf
 sed -i '/^http/,${/^}/s/}/    include \/etc\/nginx\/sites\/\*;\n}/}' /etc/nginx/nginx.conf
-chown vagrant.vagrant /var/log/nginx/
-chown vagrant.vagrant /var/lib/nginx/
+chown vagrant.vagrant -R /var/log/nginx/
+chown vagrant.vagrant -R /var/lib/nginx/
 mkdir /etc/nginx/sites
 
 systemctl enable nginx.service

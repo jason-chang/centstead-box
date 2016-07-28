@@ -4,7 +4,7 @@
 yum install -y php php-devel php-fpm php-mysql php-pgsql php-imap php-ldap \
 php-pear php-xml php-mbstring php-mcrypt php-bcmath \
 php-mhash php-redis php-memcached php-xdebug php-curl \
-php-imagick php-gd php-openssl php-readline  --enablerepo=remi-php70
+php-imagick php-gd php-openssl php-readline php-opcache --enablerepo=remi-php70
 
 # 建立 环境标识
 touch /home/vagrant/.env/php70
@@ -20,6 +20,7 @@ sed -i "s/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php.ini
 sed -i "s/upload_max_filesize = .*/upload_max_filesize = 100M/" /etc/php.ini
 sed -i "s/post_max_size = .*/post_max_size = 100M/" /etc/php.ini
 sed -i "s/;date.timezone.*/date.timezone = Asia\/Shanghai/" /etc/php.ini
+sed -i "s/opcache.enable=1/opcache.enable=0/" /etc/php.d/10-opcache.ini
 
 # Xdebug设置
 sed -i '$ixdebug.remote_enable = ON' /etc/php.d/15-xdebug.ini
