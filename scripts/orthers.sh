@@ -33,7 +33,7 @@ systemctl start beanstalkd.service
 yum install -y git
 
 # Fuck gfw 希望成功 安装 Composer
-curl -sS https://getcomposer.org/installer | php
+curl -sS http://getcomposer.org/installer | php
 mv composer.phar /usr/local/bin/composer
 
 # 添加 Composer 程序目录到全局变量
